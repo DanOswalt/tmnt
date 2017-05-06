@@ -216,7 +216,7 @@
       _players_[5],
       _players_[58]
     ]
-    
+
     return sortedPlayers;
   }
 
@@ -245,18 +245,26 @@
     console.log('players', _players_);
     const winners = [];
 
-    for(let match = 1, pIndex = 0; match < matches; match += 1, pIndex += 2) {
-      const a = _players_[pIndex];
-      const b = _players_[pIndex + 1];
-      const result = getResult(a, b);
-      winners.push(result.winner);
-      _finished_.push(result.loser);
+    for(let match = 1, pIndex = 0; match <= matches; match += 1, pIndex += 2) {
+      setTimeout(() => {
+        const a = _players_[pIndex];
+        const b = _players_[pIndex + 1];
+        const result = getResult(a, b);
+        winners.push(result.winner);
+        _finished_.push(result.loser);
+
+        //get the elements
+        const $list = $('#rd' + rd);
+        const $rowA = $($list.children().get(pIndex));
+        console.log('row', $rowA);
+        const $rowB = $($list.children().get(pIndex + 1));
+        if(result.winner === a) {
+          $rowA.css('color', 'green');
+        } else {
+          $rowB.css('color', 'green');
+        }
+      }, 1000 * match);
     }
-
-    console.log('winners', winners);
-    console.log('finished', _finished_);
-
-    //then animate
   }
 
   var getResult = function(a, b) {

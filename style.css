@@ -9,7 +9,7 @@ body {
 .round-wrapper {
   display: inline-block;
   width: 150px;
-  text-align: top;
+  vertical-align: top;
 }
 
 ul {

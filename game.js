@@ -29,6 +29,7 @@
     this.pts = sum(this.allPts);
   }
 
+  //tools
   var randNum = function(min, max) {
       return Math.floor(Math.random()*(max-min+1)+min);
   };
@@ -115,6 +116,7 @@
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
+  //data
   var fetchData = function(next) {
     var data = localStorage.getItem('players');
 
@@ -138,6 +140,7 @@
     next();
   }
 
+  //gameplay
   var createPlayers = function(n) {
     var newPlayers = [];
     for(var i = 0; i < n; i += 1) {
@@ -277,11 +280,11 @@
 
   var loadNextRound = function(rd) {
     //remove all finished from the players list
+    console.log('players', _players_);
+    console.log('finished', _finished_);
 
-    _players_.forEach((player, index) => {
-      if (_finished_.indexOf(player) > -1) {
-        _players_.splice(index, 1);
-      }
+    _players_ = _players_.filter(player => {
+      return _finished_.indexOf(player) < 0;
     })
 
     displayPlayers("rd" + rd, true);
@@ -291,7 +294,7 @@
     const aRoll = a.power * Math.random();
     const bRoll = b.power * Math.random();
     const winner = aRoll > bRoll ? a : b;
-    const loser = winner === a ? b : b;
+    const loser = winner === a ? b : a;
     return {
       winner: winner,
       loser: loser
@@ -325,7 +328,6 @@
 
   $('.go-btn').on('click', (e) => {
     const rd = $(e.target).attr('data-rd') * 1;
-    console.log('rd:', rd);
     playRound(rd);
   })
 

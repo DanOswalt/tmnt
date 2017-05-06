@@ -232,10 +232,10 @@
         $('#' + roundName).append('<li>--</li>');
       }
     } else {
+      if(roundName !== "rd1") {
+        $('#' + roundName).empty()
+      }
       _players_.forEach(function(player, index){
-        if(roundName !== "rd1") {
-          $('#' + roundName).empty()
-        }
         $('#' + roundName).append('<li data-index="' + index + '"><strong>' + player.rank + "</strong> " + player.name + '</li>');
       })
     }

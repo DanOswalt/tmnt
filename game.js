@@ -233,6 +233,9 @@
       }
     } else {
       _players_.forEach(function(player, index){
+        if(roundName !== "rd1") {
+          $('#' + roundName).empty()
+        }
         $('#' + roundName).append('<li data-index="' + index + '"><strong>' + player.rank + "</strong> " + player.name + '</li>');
       })
     }
@@ -250,21 +253,38 @@
         const a = _players_[pIndex];
         const b = _players_[pIndex + 1];
         const result = getResult(a, b);
-        winners.push(result.winner);
+        //winners.push(result.winner);
         _finished_.push(result.loser);
 
         //get the elements
         const $list = $('#rd' + rd);
         const $rowA = $($list.children().get(pIndex));
-        console.log('row', $rowA);
         const $rowB = $($list.children().get(pIndex + 1));
+
+        //turn them colors
         if(result.winner === a) {
-          $rowA.css('color', 'green');
+          $rowA.css('color', '#0099cc');
         } else {
-          $rowB.css('color', 'green');
+          $rowB.css('color', '#0099cc');
         }
       }, 1000 * match);
     }
+
+    setTimeout(() => {
+      loadNextRound(rd + 1);
+    }, 1000 * (matches + 1))
+  }
+
+  var loadNextRound = function(rd) {
+    //remove all finished from the players list
+
+    _players_.forEach((player, index) => {
+      if (_finished_.indexOf(player) > -1) {
+        _players_.splice(index, 1);
+      }
+    })
+
+    displayPlayers("rd" + rd, true);
   }
 
   var getResult = function(a, b) {

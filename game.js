@@ -2,6 +2,8 @@
 
   let _players_ = [];
   let _finished_ = [];
+  let _results_ = [];
+  let _history_ = [];
 
   function Player(obj) {
     this.name = obj.name || randomName();
@@ -17,7 +19,7 @@
   Player.prototype.changeRolls = function() {
     var newRoll = randNum(1, this.newRoll);
     this.rolls.push(newRoll);
-    if(this.rolls.length === 4) {
+    if(this.rolls.length === 6) {
       this.rolls.pop();
     }
     this.power = sum(this.rolls);
@@ -35,11 +37,9 @@
   };
 
   var sum = function(array) {
-    console.log('array', array);
     var result = array.reduce(function(a, b) {
       return a + b;
     }, 0);
-    console.log('result', result);
     return result;
   }
 
@@ -118,25 +118,43 @@
 
   //data
   var fetchData = function(next) {
-    var data = localStorage.getItem('players');
+    var playerData = localStorage.getItem('players');
+    var resultsData = localStorage.getItem('results');
 
-    if(data) {
-      console.log('data loaded');
-      var parsed = JSON.parse(data);
+    if(playerData) {
+      console.log('playerData loaded');
+      var parsed = JSON.parse(playerData);
       _players_ = parsed.map(function(item) {
         return new Player(item);
       })
-      console.log(_players_);
+      // console.log(_players_);
       next();
     } else {
       console.log('data created');
       createPlayers(64);
-      saveData(_players_, next);
+      saveData(next);
+    }
+
+    if(resultsData) {
+      console.log('historyData loaded');
+      var parsed = JSON.parse(resultsData);
+      _history_.push(parsed.map(function(item) {
+        return new Player(item);
+      }));
+      console.log(_players_);
+      next();
     }
   }
 
   var saveData = function(next) {
     localStorage.setItem('players', JSON.stringify(_players_));
+    if(_results_.length !== 0) {
+      _history_.push(_results_);
+      localStorage.setItem('history', JSON.stringify(_history_));
+    }
+    console.log('saved players', _players_);
+    console.log('saved history', _history_);
+
     next();
   }
 
@@ -244,19 +262,27 @@
     }
   }
 
+  var displayResults = function() {
+    //do player.prize here instead
+    _results_ = _finished_.reverse();
+    // console.log('results', results);
+    $('#rd8').empty();
+    _results_.forEach(function(player, index){
+      $('#rd8').append('<li data-index="' + index + '"><strong>' + player.prize + "</strong> " + player.name + '</li>');
+    })
+  }
+
   var playRound = function(rd) {
     //get results first
     const matches = _players_.length / 2;
-    console.log('matches', matches);
-    console.log('players', _players_);
     const winners = [];
+    const delay = 100;
 
     for(let match = 1, pIndex = 0; match <= matches; match += 1, pIndex += 2) {
       setTimeout(() => {
         const a = _players_[pIndex];
         const b = _players_[pIndex + 1];
         const result = getResult(a, b);
-        //winners.push(result.winner);
         _finished_.push(result.loser);
 
         //get the elements
@@ -270,42 +296,60 @@
         } else {
           $rowB.css('color', '#0099cc');
         }
-      }, 1000 * match);
+      }, delay * match);
     }
 
     setTimeout(() => {
       loadNextRound(rd + 1);
-    }, 1000 * (matches + 1))
+    }, delay * (matches + 1))
   }
 
   var loadNextRound = function(rd) {
     //remove all finished from the players list
-    console.log('players', _players_);
-    console.log('finished', _finished_);
-
     _players_ = _players_.filter(player => {
       return _finished_.indexOf(player) < 0;
     })
 
+    // console.log('players', _players_);
+    // console.log('finished', _finished_);
+
     displayPlayers("rd" + rd, true);
   }
 
-  var getResult = function(a, b) {
-    const aRoll = a.power * Math.random();
-    const bRoll = b.power * Math.random();
-    const winner = aRoll > bRoll ? a : b;
-    const loser = winner === a ? b : a;
-    return {
-      winner: winner,
-      loser: loser
-    };
+  var awardPts = function(rd) {
+    _finished_[0].prize = 400;
+    _finished_[1].prize = 80;
+    _finished_[2].prize = 20;
+    _finished_[3].prize = 20;
+    _finished_[4].prize = 5;
+    _finished_[5].prize = 5;
+    _finished_[6].prize = 5;
+    _finished_[7].prize = 5;
   }
 
-  //////////////////////////////////////////////////////////
-  // on load, fetch data and display game
-  //////////////////////////////////////////////////////////
+  var finishUpRound = function() {
+    //put winner into finished list
+    _finished_.push(_players_[0]);
 
-  fetchData(function() {
+    console.log('players num', _players_.length);
+    console.log('finished num', _finished_.length);
+    //award points
+    awardPts();
+    _finished_.forEach(player => {
+      player.bankPts();
+      player.changeRolls();
+    });
+    displayResults();
+    _players_ = _finished_.slice();
+    _finished_ = [];
+    console.log('players before save', _players_);
+    console.log('finished before save', _finished_);
+    saveData(() => {
+      _results_ = [];
+    });
+  }
+
+  var startTournament = function() {
     _players_.sort(function(a, b) {
       return b.power - a.power;
     });
@@ -324,10 +368,37 @@
     displayPlayers("rd5", false, 4);
     displayPlayers("rd6", false, 2);
     displayPlayers("rd7", false, 1);
-  });
+    displayPlayers("rd8", false, 32);
+  };
+
+  var getResult = function(a, b) {
+    const aRoll = a.power * Math.random();
+    const bRoll = b.power * Math.random();
+    const winner = aRoll > bRoll ? a : b;
+    const loser = winner === a ? b : a;
+    return {
+      winner: winner,
+      loser: loser
+    };
+  }
+
+  //////////////////////////////////////////////////////////
+  // on load, fetch data and display game
+  //////////////////////////////////////////////////////////
+
+  fetchData(startTournament);
 
   $('.go-btn').on('click', (e) => {
     const rd = $(e.target).attr('data-rd') * 1;
+    if(rd === 7) {
+      finishUpRound();
+      return;
+    }
+    if(rd === 8) {
+      $('.rd-list').empty();
+      startTournament();
+      return
+    }
     playRound(rd);
   })
 

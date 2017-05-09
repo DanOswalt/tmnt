@@ -35,4 +35,5 @@ li:nth-child(4n-3) {
 
 .results li {
   background-color: #009900;
+  width: 300px;
 }

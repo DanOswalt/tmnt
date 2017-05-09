@@ -11,7 +11,7 @@
     this.pts = obj.pts || 0;
     this.newRoll = obj.newRoll || randNum(5, 50);
     this.rolls = obj.rolls || [];
-    this.allPts = obj.pts || [];
+    this.allPts = obj.allPts || [];
     this.prize = 0;
     this.rank = 0;
   };
@@ -27,7 +27,6 @@
 
   Player.prototype.bankPts = function() {
     this.allPts.push(this.prize);
-    this.prize = 0;
     this.pts = sum(this.allPts);
   }
 
@@ -119,41 +118,24 @@
   //data
   var fetchData = function(next) {
     var playerData = localStorage.getItem('players');
-    var resultsData = localStorage.getItem('results');
 
     if(playerData) {
-      console.log('playerData loaded');
       var parsed = JSON.parse(playerData);
       _players_ = parsed.map(function(item) {
         return new Player(item);
       })
-      // console.log(_players_);
+      console.log('players loaded', _players_);
       next();
     } else {
-      console.log('data created');
+      console.log('new players created', _players_);
       createPlayers(64);
       saveData(next);
-    }
-
-    if(resultsData) {
-      console.log('historyData loaded');
-      var parsed = JSON.parse(resultsData);
-      _history_.push(parsed.map(function(item) {
-        return new Player(item);
-      }));
-      console.log(_players_);
-      next();
     }
   }
 
   var saveData = function(next) {
     localStorage.setItem('players', JSON.stringify(_players_));
-    if(_results_.length !== 0) {
-      _history_.push(_results_);
-      localStorage.setItem('history', JSON.stringify(_history_));
-    }
     console.log('saved players', _players_);
-    console.log('saved history', _history_);
 
     next();
   }
@@ -263,12 +245,10 @@
   }
 
   var displayResults = function() {
-    //do player.prize here instead
-    _results_ = _finished_.reverse();
     // console.log('results', results);
     $('#rd8').empty();
-    _results_.forEach(function(player, index){
-      $('#rd8').append('<li data-index="' + index + '"><strong>' + player.prize + "</strong> " + player.name + '</li>');
+    _finished_.forEach(function(player, index){
+      $('#rd8').append('<li data-index="' + index + '"><strong>' + player.pts + "</strong> [" + player.allPts + "] <strong>" + player.name + '</strong></li>');
     })
   }
 
@@ -325,34 +305,34 @@
     _finished_[5].prize = 5;
     _finished_[6].prize = 5;
     _finished_[7].prize = 5;
+    _finished_.forEach(player => {
+      player.bankPts();
+    });
   }
 
   var finishUpRound = function() {
     //put winner into finished list
-    _finished_.push(_players_[0]);
+    _finished_.reverse();
+    _finished_.unshift(_players_[0]);
 
-    console.log('players num', _players_.length);
-    console.log('finished num', _finished_.length);
     //award points
     awardPts();
-    _finished_.forEach(player => {
-      player.bankPts();
-      player.changeRolls();
-    });
     displayResults();
+    _finished_.forEach(player => {
+      player.changeRolls();
+      player.prize = 0;
+    });
     _players_ = _finished_.slice();
     _finished_ = [];
-    console.log('players before save', _players_);
-    console.log('finished before save', _finished_);
     saveData(() => {
       _results_ = [];
     });
   }
 
   var startTournament = function() {
-    _players_.sort(function(a, b) {
-      return b.power - a.power;
-    });
+    // _players_.sort(function(a, b) {
+    //   return b.power - a.power;
+    // });
 
     _players_.sort(function(a, b) {
       return b.pts - a.pts;

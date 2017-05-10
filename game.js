@@ -127,8 +127,8 @@
       console.log('players loaded', _players_);
       next();
     } else {
-      console.log('new players created', _players_);
       createPlayers(64);
+      console.log('new players created', _players_);
       saveData(next);
     }
   }
@@ -143,8 +143,19 @@
   //gameplay
   var createPlayers = function(n) {
     var newPlayers = [];
+    var player;
+    var playernames = [];
+
     for(var i = 0; i < n; i += 1) {
-      _players_.push(new Player({}));
+      //in order to not produce duplicates
+      do {
+        player = new Player({});
+      } while (playernames.indexOf(player) > -1);
+
+      _players_.push(player);
+      playernames = _players_.map(player => {
+        return player.name;
+      });
     }
     _players_.forEach(function(player){
       player.changeRolls();
@@ -159,7 +170,7 @@
       _players_[31],
       _players_[32],
       _players_[16],
-      _players_[57],
+      _players_[47],
       _players_[15],
       _players_[48],
       _players_[8],
@@ -247,6 +258,9 @@
   var displayResults = function() {
     // console.log('results', results);
     $('#rd8').empty();
+    _finished_.sort(function(a, b) {
+      return b.pts - a.pts;
+    });
     _finished_.forEach(function(player, index){
       $('#rd8').append('<li data-index="' + index + '"><strong>' + player.pts + "</strong> [" + player.allPts + "] <strong>" + player.name + '</strong></li>');
     })
@@ -256,7 +270,7 @@
     //get results first
     const matches = _players_.length / 2;
     const winners = [];
-    const delay = 100;
+    const delay = 1000;
 
     for(let match = 1, pIndex = 0; match <= matches; match += 1, pIndex += 2) {
       setTimeout(() => {
@@ -280,6 +294,7 @@
     }
 
     setTimeout(() => {
+      console.log('load next round');
       loadNextRound(rd + 1);
     }, delay * (matches + 1))
   }
@@ -348,7 +363,6 @@
     displayPlayers("rd5", false, 4);
     displayPlayers("rd6", false, 2);
     displayPlayers("rd7", false, 1);
-    displayPlayers("rd8", false, 32);
   };
 
   var getResult = function(a, b) {

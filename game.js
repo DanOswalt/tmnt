@@ -2,8 +2,6 @@
 
   let _players_ = [];
   let _finished_ = [];
-  let _results_ = [];
-  let _history_ = [];
 
   function Player(obj) {
     this.name = obj.name || randomName();
@@ -12,6 +10,7 @@
     this.newRoll = obj.newRoll || randNum(5, 50);
     this.rolls = obj.rolls || [];
     this.allPts = obj.allPts || [];
+    this.age = obj.age || 0;
     this.prize = 0;
     this.rank = 0;
   };
@@ -23,6 +22,7 @@
       this.rolls.pop();
     }
     this.power = sum(this.rolls);
+    this.age += 1;
   }
 
   Player.prototype.bankPts = function() {
@@ -128,6 +128,7 @@
       next();
     } else {
       createPlayers(64);
+      fakeAges();
       console.log('new players created', _players_);
       saveData(next);
     }
@@ -156,10 +157,25 @@
       playernames = _players_.map(player => {
         return player.name;
       });
-    }
-    _players_.forEach(function(player){
       player.changeRolls();
-    });
+    }
+  }
+
+  var retireOldies = function() {
+    _players_ = _players_.filter(function(player) {
+      return player.age < 17;
+    })
+    console.log('after retireOldies', _players_);
+  };
+
+  var fakeAges = function() {
+    console.log('ages faked');
+    for (var i = 0, age = 1; age <= 16; i += 4, age += 1) {
+      _players_[i].age = age;
+      _players_[i+1].age = age;
+      _players_[i+2].age = age;
+      _players_[i+3].age = age;
+    }
   }
 
   var sortForBracketPosition = function() {
@@ -250,7 +266,8 @@
         $('#' + roundName).empty()
       }
       _players_.forEach(function(player, index){
-        $('#' + roundName).append('<li data-index="' + index + '"><strong>' + player.rank + "</strong> " + player.name + '</li>');
+        var rank = player.rank < 17 ? player.rank : " ";
+        $('#' + roundName).append('<li data-index="' + index + '"><strong>' + rank + "</strong> " + player.name + '</li>');
       })
     }
   }
@@ -262,7 +279,7 @@
       return b.pts - a.pts;
     });
     _finished_.forEach(function(player, index){
-      $('#rd8').append('<li data-index="' + index + '"><strong>' + player.pts + "</strong> [" + player.allPts + "] <strong>" + player.name + '</strong></li>');
+      $('#rd8').append('<li data-index="' + index + '"><strong>' + player.pts + "</strong> [" + player.allPts + "] <strong>" + player.name + '</strong> ' + player.age + '/' + player.power + '</li>');
     })
   }
 
@@ -270,7 +287,7 @@
     //get results first
     const matches = _players_.length / 2;
     const winners = [];
-    const delay = 1000;
+    const delay = 500;
 
     for(let match = 1, pIndex = 0; match <= matches; match += 1, pIndex += 2) {
       setTimeout(() => {
@@ -312,7 +329,7 @@
   }
 
   var awardPts = function(rd) {
-    _finished_[0].prize = 400;
+    _finished_[0].prize = 320;
     _finished_[1].prize = 80;
     _finished_[2].prize = 20;
     _finished_[3].prize = 20;
@@ -340,7 +357,8 @@
     _players_ = _finished_.slice();
     _finished_ = [];
     saveData(() => {
-      _results_ = [];
+      retireOldies();
+      createPlayers(4);
     });
   }
 
